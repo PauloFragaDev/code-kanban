@@ -10,3 +10,14 @@ vsc-extension-quickstart.md
 **/.eslintrc.json
 **/*.map
 **/*.ts
+
+# Dev tooling and CI — not needed at runtime
+.claude/**
+.github/**
+.tool-versions
+tsconfig*.json
+webpack.config.js
+babel.config.js
+.editorconfig
+.prettierrc*
+*.vsix
