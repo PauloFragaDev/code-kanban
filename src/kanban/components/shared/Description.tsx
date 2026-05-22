@@ -80,7 +80,7 @@ export const Description = ({description: defaultDescription, fontSize, onEnter}
             outline: 'none',
             transition: 'border-color 120ms ease-in-out',
             boxSizing: 'border-box',
-          }}
+          } as Record<string, unknown>}
           value={description}
         />
       </Container>
