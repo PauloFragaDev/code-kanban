@@ -468,7 +468,7 @@ const EditCard = () => {
             ))}
           </Line>
           <BUttons>
-            <Button text="Copy" icon={<MdContentCopy />} disabled={false} onClick={handleCopyCard} />
+            <Button text="Duplicate" icon={<MdContentCopy />} disabled={false} onClick={handleCopyCard} />
             {!isArchived && (
               <Button text="Archive" icon={<MdOutlineArchive />} disabled={false} onClick={handleArchiveCard} />
             )}

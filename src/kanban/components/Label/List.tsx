@@ -3,6 +3,7 @@ import { MdAdd } from 'react-icons/md';
 import { styled } from 'styled-components';
 import { type Card, type List } from '../../models/kanban';
 import { selectors, actions } from '../../store';
+import { hexToRgba } from '../../utils';
 import { LabelSelect } from './Select';
 
 const Labels = styled.div`
@@ -12,14 +13,14 @@ const Labels = styled.div`
 `;
 
 const LabelItem = styled.div`
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1.5rem;
-  color: var(--light-text-color);
   border-radius: var(--border-radius);
   margin-right: 4px;
-  font-weight: 600;
-  padding: 4px;
+  font-weight: 500;
+  padding: 1px 10px;
   height: 24px;
+  border: 1px solid transparent;
 `;
 
 const AddButton = styled.div`
@@ -63,7 +64,12 @@ export const LabelList = ({ list, card }: Properties) => {
       {sortedLabels.map((l) => (
         <LabelItem
           key={l.id}
-          style={{ backgroundColor: l.color, cursor: 'pointer' }}
+          style={{
+            backgroundColor: hexToRgba(l.color, 0.15),
+            color: l.color,
+            borderColor: hexToRgba(l.color, 0.3),
+            cursor: 'pointer',
+          }}
           onClick={(e: React.MouseEvent<HTMLDivElement>) => {
             e.stopPropagation();
             setShowModal(true);

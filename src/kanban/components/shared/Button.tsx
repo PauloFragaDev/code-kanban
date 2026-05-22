@@ -4,15 +4,18 @@ import { styled, css } from 'styled-components';
 const ButtonBase = styled.button<{
   background: 'primary' | 'secondary' | 'danger';
 }>`
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 6px;
   border: none;
   outline: none;
   cursor: pointer;
   border-radius: var(--border-radius);
   line-height: 20px;
-  padding: 6px 12px;
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
   ${(properties) =>
     properties.background === 'danger'
       ? css`
@@ -39,10 +42,8 @@ const ButtonBase = styled.button<{
   }
 `;
 
-const Label = styled.div`
-  font-size: 0.875rem;
+const Label = styled.span`
   line-height: 1.25rem;
-  padding: 4px;
   border: none;
   background-color: transparent;
 `;
