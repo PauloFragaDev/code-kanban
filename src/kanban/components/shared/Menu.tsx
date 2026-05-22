@@ -4,10 +4,21 @@ import { selectors, actions } from '../../store';
 import { MenuItem, type Props as MenuItemProperties } from './MenuItem';
 
 const MenuIcon = styled.div`
-  font-size: 1.1rem;
-  cursor: pointer;
   position: relative;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
   color: var(--text-color);
+  transition: border-color 120ms ease-in-out;
+  &:hover {
+    border-color: var(--form-border-color);
+  }
 `;
 
 const MenuItems = styled.div<{
@@ -15,9 +26,10 @@ const MenuItems = styled.div<{
 }>`
   box-shadow: var(--shadow-sm);
   background-color: var(--primary-background-color);
+  border: 1px solid var(--form-border-color);
   width: 232px;
   position: absolute;
-  top: 24px;
+  top: 32px;
   font-size: 1rem;
   border-radius: 8px;
   z-index: 100;
