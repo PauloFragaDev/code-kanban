@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { styled } from 'styled-components';
 import { type Card } from '../models/kanban';
+import { getContrastTextColor } from '../utils';
 
 const Container = styled.div<{ $selected: boolean; $accentColor: string }>`
   background-color: var(--card-background-color);
@@ -44,7 +45,7 @@ const Labels = styled.div`
 
 const LabelPill = styled.span<{ $color: string }>`
   background-color: ${(p) => p.$color};
-  color: white;
+  color: ${(p) => getContrastTextColor(p.$color)};
   border-radius: 8px;
   font-size: 0.7rem;
   padding: 1px 6px;

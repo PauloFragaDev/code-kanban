@@ -11,8 +11,10 @@
   /* Canvas + columns + cards — pull from VSCode theme variables */
   --main-background-color: var(--vscode-editor-background);
   --primary-background-color: var(--vscode-sideBar-background);
-  --secondary-background-color: var(--vscode-editorWidget-background);
-  --card-background-color: var(--vscode-editorWidget-background);
+  /* Cards: prefer input-background which is usually distinct from sideBar.
+     Falls back to editorWidget-background then a sensible default. */
+  --secondary-background-color: var(--vscode-input-background, var(--vscode-editorWidget-background));
+  --card-background-color: var(--vscode-input-background, var(--vscode-editorWidget-background));
   --list-background-color: var(--vscode-sideBar-background);
 
   --text-color: var(--vscode-foreground);

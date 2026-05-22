@@ -5,60 +5,80 @@ import { type Color, colors, type Label } from '../../models/kanban';
 import { uuid } from '../../utils';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
-import { TextSm } from '../shared/Text';
 
 const Modal = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 11rem;
-  padding: 16px;
-  background-color: var(--secondary-background-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
   position: absolute;
   right: 0;
-`;
-
-const Title = styled.div`
-  color: var(--text-color);
-`;
-
-const Line = styled.div`
-  padding-bottom: 8px;
-`;
-
-const Buttons = styled.div`
+  top: 32px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const Labels = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-`;
-
-const LabelItem = styled.div`
+  flex-direction: column;
+  gap: 12px;
+  width: 240px;
+  padding: 14px;
+  background-color: var(--card-background-color, var(--secondary-background-color));
+  border: 1px solid var(--form-border-color);
   border-radius: var(--border-radius);
-  margin-right: 4px;
-  padding: 4px 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+`;
+
+const SectionTitle = styled.div`
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--secondary-text-color);
+  margin-bottom: 4px;
+`;
+
+const Field = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const Swatches = styled.div`
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+`;
+
+const Swatch = styled.button<{ $color: string; $selected: boolean }>`
+  width: 28px;
+  height: 28px;
+  border-radius: var(--border-radius);
+  background-color: ${(p) => p.$color};
+  border: 2px solid ${(p) => (p.$selected ? 'var(--text-color)' : 'transparent')};
   cursor: pointer;
+  padding: 0;
+  outline: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 16px;
+  color: #fff;
+  transition: transform 80ms ease-in-out;
+  &:hover {
+    transform: scale(1.08);
+  }
+`;
+
+const Footer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--form-border-color);
 `;
 
 type Props = {
   label?: Label;
   onEdit: (label: Label) => void;
   onDelete?: (label: Label) => void;
+  onCancel?: () => void;
 };
 
-export const LabelEdit = ({ label, onEdit, onDelete }: Props) => {
+export const LabelEdit = ({label, onEdit, onDelete, onCancel}: Props) => {
   const [selectedColor, setSelectedColor] = React.useState(label ? label.color : ('#ff9f1a' as Color));
   const [labelText, setLabelText] = React.useState(label ? label.title : '');
 
@@ -68,76 +88,74 @@ export const LabelEdit = ({ label, onEdit, onDelete }: Props) => {
         e.stopPropagation();
       }}
     >
-      <Line>
-        <Title>
-          <TextSm>Label name</TextSm>
-        </Title>
+      <SectionTitle>{label ? 'Edit label' : 'New label'}</SectionTitle>
+      <Field>
         <Input
-          style={{
-            marginLeft: '-3px',
-            width: 'calc(100% - 24px)',
-            boxShadow: 'var(--shadow-sm)',
-            borderBottom: '1px solid var(--form-border-color)',
-          }}
+          autoFocus
+          placeholder="Label name"
           value={labelText}
+          style={{width: '100%', boxSizing: 'border-box'}}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setLabelText(e.target.value);
           }}
         />
-      </Line>
-      <Line>
-        <Title>
-          <TextSm>Select a color</TextSm>
-        </Title>
-        <Labels>
+      </Field>
+      <Field>
+        <SectionTitle>Color</SectionTitle>
+        <Swatches>
           {colors.map((c) => (
-            <LabelItem
+            <Swatch
               key={c}
-              style={{ backgroundColor: c }}
-              onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+              type="button"
+              $color={c}
+              $selected={c === selectedColor}
+              aria-label={c}
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                 e.stopPropagation();
                 setSelectedColor(c);
               }}
             >
-              {c === selectedColor ? <MdCheck style={{ fontSize: '1.1rem', fontWeight: 600 }} /> : <></>}
-            </LabelItem>
+              {c === selectedColor && <MdCheck />}
+            </Swatch>
           ))}
-        </Labels>
-      </Line>
-      <Line>
-        <Buttons>
+        </Swatches>
+      </Field>
+      <Footer>
+        {label && onDelete && (
           <Button
-            text={label ? 'Edit' : 'Create'}
-            type="primary"
+            type="danger"
+            text="Delete"
             disabled={false}
             onClick={() => {
-              onEdit(
-                label
-                  ? { ...label, title: labelText, color: selectedColor }
-                  : {
-                      id: uuid(),
-                      title: labelText,
-                      color: selectedColor,
-                    }
-              );
+              onDelete(label);
             }}
           />
-          {label && (
-            <Button
-              type="danger"
-              text="Delete"
-              disabled={false}
-              onClick={() => {
-                if (!onDelete) {
-                  return;
-                }
-
-                onDelete(label);
-              }}
-            />
-          )}
-        </Buttons>
-      </Line>
+        )}
+        {onCancel && (
+          <Button
+            text="Cancel"
+            type="secondary"
+            disabled={false}
+            onClick={onCancel}
+          />
+        )}
+        <Button
+          text={label ? 'Save' : 'Create'}
+          type="primary"
+          disabled={labelText.trim().length === 0}
+          onClick={() => {
+            onEdit(
+              label
+                ? {...label, title: labelText.trim(), color: selectedColor}
+                : {
+                    id: uuid(),
+                    title: labelText.trim(),
+                    color: selectedColor,
+                  }
+            );
+          }}
+        />
+      </Footer>
     </Modal>
   );
 };

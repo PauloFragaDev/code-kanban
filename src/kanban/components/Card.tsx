@@ -9,6 +9,7 @@ import { styled } from 'styled-components';
 import { useAutoFocus } from '../hooks/useAutoFocus';
 import { type Card as CardModel } from '../models/kanban';
 import { actions } from '../store';
+import { getContrastTextColor } from '../utils';
 import { TextXs } from './shared/Text';
 
 const Container = styled.div`
@@ -205,7 +206,7 @@ export const Card = ({ card, onEnter, onBlur, editable = true, isEdit = false }:
             {sortedLabels.length > 0 && (
               <Labels>
                 {sortedLabels.map((l) => (
-                  <Label key={l.id} style={{ backgroundColor: l.color }}>
+                  <Label key={l.id} style={{ backgroundColor: l.color, color: getContrastTextColor(l.color) }}>
                     {l.title}
                   </Label>
                 ))}

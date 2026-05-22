@@ -69,8 +69,7 @@ const Line = styled.div`
   display: flex;
   justify-content: center;
   flex-direction: column;
-  border-bottom: 1px solid var(--selected-color);
-  padding: 16px;
+  padding: 12px 18px;
 `;
 
 const Head = styled.div`
