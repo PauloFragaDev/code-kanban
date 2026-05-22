@@ -18,7 +18,8 @@ const Button = styled.div<{ $active: boolean }>`
     color 120ms ease-in-out,
     background-color 120ms ease-in-out;
   &:hover {
-    border-color: var(--form-border-color);
+    border-color: ${(p) => (p.$active ? 'var(--primary-color)' : 'var(--form-border-color)')};
+    color: ${(p) => (p.$active ? 'var(--primary-color)' : 'inherit')};
   }
 `;
 
