@@ -77,24 +77,30 @@ function findOpenTab(uri: vscode.Uri): vscode.Tab | undefined {
 }
 
 async function runAutoCreationFlow(target: vscode.Uri, workspaceRoot: string): Promise<void> {
+  const config = vscode.workspace.getConfiguration();
+  const addToGitignore = config.get<boolean>('code-kanban.gitignore-todo') ?? true;
+
+  const detail = addToGitignore
+    ? '`*.kanban` will be added to `.gitignore` so personal to-dos stay out of source control. You can change this in Settings (`code-kanban.gitignore-todo`).'
+    : 'The file will be tracked by git. You can change this in Settings (`code-kanban.gitignore-todo`).';
+
   const choice = await vscode.window.showInformationMessage(
     'No kanban found in this workspace. Create .todo.kanban at the root?',
-    { modal: true },
-    'Create and add to .gitignore',
-    'Create only'
+    { modal: true, detail },
+    'Create'
   );
 
   if (choice === undefined) {
     return; // User cancelled
   }
 
-  const defaultLists = vscode.workspace.getConfiguration().get<string[]>('code-kanban.default-lists') ?? [];
+  const defaultLists = config.get<string[]>('code-kanban.default-lists') ?? [];
   const initialKanban = buildInitialKanban(defaultLists);
   const payload = Buffer.from(JSON.stringify(initialKanban, null, 2), 'utf8');
 
   await vscode.workspace.fs.writeFile(target, payload);
 
-  if (choice === 'Create and add to .gitignore') {
+  if (addToGitignore) {
     await ensureGitignoreEntry(workspaceRoot, '*.kanban');
   }
 

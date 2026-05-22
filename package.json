@@ -136,6 +136,12 @@
           ],
           "description": "List/column titles used when creating a new kanban file."
         },
+        "code-kanban.gitignore-todo": {
+          "title": "Add .todo.kanban to .gitignore on creation",
+          "type": "boolean",
+          "default": true,
+          "description": "When enabled (default), creating a new .todo.kanban also appends `*.kanban` to the workspace .gitignore so personal to-dos stay out of source control. Disable if you want to share the kanban file with the team via git."
+        },
         "code-kanban.sidebar.show-labels": {
           "title": "Sidebar Show Labels",
           "type": "boolean",
