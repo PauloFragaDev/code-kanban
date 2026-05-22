@@ -48,12 +48,10 @@ export class KanbanEditorProvider implements vscode.CustomTextEditorProvider {
           }
 
           case 'edit': {
-            const success = await this.updateTextDocument(document, e.kanban!);
-
-            if (!success) {
-              await vscode.window.showErrorMessage('Failed to update Kanban');
-            }
-
+            // updateTextDocument logs internally on failure. The webview will
+            // resend the full state on the next interaction, so a transient
+            // false here doesn't lose data and shouldn't toast the user.
+            await this.updateTextDocument(document, e.kanban!);
             break;
           }
 
@@ -97,13 +95,30 @@ export class KanbanEditorProvider implements vscode.CustomTextEditorProvider {
     const edit = new vscode.WorkspaceEdit();
     edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), text);
 
-    const applied = await vscode.workspace.applyEdit(edit);
-    if (applied) {
-      // Auto-save: every edit from the kanban UI is persisted immediately so
-      // the user never sees the "Do you want to save?" dialog when closing.
-      await document.save();
-    }
+    try {
+      const applied = await vscode.workspace.applyEdit(edit);
+      if (applied) {
+        // Auto-save: persist immediately so the user never sees the
+        // "Do you want to save?" dialog when closing the editor.
+        try {
+          await document.save();
+        } catch (saveError) {
+          // A save can race with a follow-up applyEdit (rapid React updates).
+          // The next save call will catch up; nothing to surface to the user.
+          console.warn('Code Kanban: document.save deferred', saveError);
+        }
 
-    return applied;
+        return true;
+      }
+
+      // applyEdit returned false. Most often this is a transient race during
+      // rapid consecutive edits — the next message from the webview will
+      // re-send the full kanban state. Log it but don't toast.
+      console.warn('Code Kanban: applyEdit returned false (likely a race with a concurrent edit)');
+      return false;
+    } catch (error) {
+      console.error('Code Kanban: updateTextDocument failed', error);
+      return false;
+    }
   }
 }

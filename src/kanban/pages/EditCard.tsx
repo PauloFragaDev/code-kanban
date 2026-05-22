@@ -472,7 +472,7 @@ const EditCard = () => {
               </Icon>
               <TextBaseBold>Comments</TextBaseBold>
             </Head>
-            <AddComment addText="Save" placeholder="Enter a comment" type="primary" onEnter={handleAddComment} />
+            <AddComment addText="Post" placeholder="Enter a comment" type="primary" onEnter={handleAddComment} />
             {comments.map((c) => (
               <Comment key={c.id} comment={c} onEnter={handleEditComment(c)} onDelete={handleDeleteComment} />
             ))}
