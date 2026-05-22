@@ -11,6 +11,7 @@ const Row = styled.div`
   gap: 8px;
   padding: 6px 8px;
   border-radius: var(--border-radius);
+  min-height: 32px;
   transition: background-color 120ms ease-in-out;
   &:hover {
     background-color: var(--hover-color);
@@ -30,7 +31,7 @@ const Body = styled.div`
   }
 `;
 
-const TrashButton = styled.button`
+const TrashButton = styled.button<{ $visible: boolean }>`
   width: 26px;
   height: 26px;
   display: flex;
@@ -42,7 +43,10 @@ const TrashButton = styled.button`
   color: var(--secondary-text-color);
   cursor: pointer;
   flex-shrink: 0;
+  opacity: ${(p) => (p.$visible ? 1 : 0)};
+  pointer-events: ${(p) => (p.$visible ? 'auto' : 'none')};
   transition:
+    opacity 120ms ease-in-out,
     border-color 120ms ease-in-out,
     color 120ms ease-in-out;
   &:hover {
@@ -128,18 +132,17 @@ export const Comment = ({comment, onEnter, onDelete}: Properties) => {
           <ReactMarkdown>{comment.comment ?? ''}</ReactMarkdown>
         )}
       </Body>
-      {showTrash && !isEdit && (
-        <TrashButton
-          type="button"
-          aria-label="Delete comment"
-          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-            e.stopPropagation();
-            onDelete(comment);
-          }}
-        >
-          <IoMdTrash />
-        </TrashButton>
-      )}
+      <TrashButton
+        type="button"
+        aria-label="Delete comment"
+        $visible={showTrash && !isEdit}
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+          e.stopPropagation();
+          onDelete(comment);
+        }}
+      >
+        <IoMdTrash />
+      </TrashButton>
     </Row>
   );
 };
