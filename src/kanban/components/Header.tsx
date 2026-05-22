@@ -73,6 +73,7 @@ const Logo = styled.div`
 export const Header = ({ title }: Props) => {
   const setFilter = actions.useSetFilter();
   const searchLabels = selectors.useFilterLabels();
+  const menuClose = actions.useMenuClose();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchInput, setSearchInput] = React.useState('');
@@ -126,6 +127,7 @@ export const Header = ({ title }: Props) => {
         <IconButton
           icon={<MdRefresh />}
           onClick={() => {
+            menuClose();
             vscode.postMessage({ type: 'reload' });
           }}
           title="Reload kanban file"
@@ -134,6 +136,7 @@ export const Header = ({ title }: Props) => {
           icon={<MdFilterAlt />}
           active={location.pathname === '/filters' || (searchLabels.size ?? 0) > 0}
           onClick={() => {
+            menuClose();
             navigate('/filters', { state: { backgroundLocation: location } });
           }}
         />
@@ -143,11 +146,7 @@ export const Header = ({ title }: Props) => {
         <Menu
           id={`main-menu`}
           position="left"
-          icon={
-            <div style={{ color: 'var(--light-text-color)' }}>
-              <MdMenu />
-            </div>
-          }
+          icon={<MdMenu />}
           items={[
             {
               icon: <MdArchive />,
