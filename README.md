@@ -5,7 +5,6 @@
 Personal to-do boards that live alongside your code. Toggle them open with one keystroke, drag cards while you think, and keep everything in a `.kanban` JSON file that ships with your repo (or stays out of it).
 
 ![Code Kanban hero shot](./media/hero.png)
-<!-- TODO: hero.png — board open in main editor, light theme, ~3 columns with cards + at least one card with a label and a due date. 1600x900 ideally. -->
 
 ---
 
@@ -23,35 +22,34 @@ Personal to-do boards that live alongside your code. Toggle them open with one k
 `Ctrl+Alt+K` (or `Cmd+Alt+K`) opens or closes your project's `.todo.kanban` in the main editor. There's also a status-bar button if you prefer the mouse. No sidebar, no flash — just the file opens.
 
 ![Status-bar toggle](./media/status-bar-toggle.png)
-<!-- TODO: status-bar-toggle.png — close-up of the bottom status bar showing the "$(checklist) Code Kanban" item. Crop tight. -->
 
 ### Vertical board in the sidebar
 
 Switch `code-kanban.activity-bar-mode` to `panel` and the activity-bar icon opens a compact vertical board in the sidebar. Glance, drag, add — without leaving the file you're editing.
 
 ![Sidebar panel mode](./media/sidebar-panel.png)
-<!-- TODO: sidebar-panel.png — sidebar open with the vertical board, a couple of lists visible with cards. Light theme. -->
+
+Drag cards between lists right in the sidebar — even into collapsed lists, which expand on hover so you never lose the drop target.
+
+![Drag and drop in the sidebar](./media/drag-demo.gif)
 
 ### Per-column colours
 
 Pick a colour for any list from its menu — 8 presets that match the brand palette. The accent shows up on the column header, the card-selection border in the sidebar, and the inline "Add card" input.
 
 ![Per-column color picker](./media/color-picker.png)
-<!-- TODO: color-picker.png — kanban board with the kebab menu open on one column, the Color popup visible with the 8 swatches. -->
 
 ### Rich card editor
 
 Click a card to open the full editor: description (Markdown), labels, due date, task list with progress bar, and threaded comments. Everything saves to disk as you type — no "did you want to save?" dialog when you close the tab.
 
 ![Edit card modal](./media/edit-card.png)
-<!-- TODO: edit-card.png — the EditCard modal open with a description, a label, a due date and a couple of tasks. -->
 
 ### Dark mode and theme awareness
 
 Pick `light`, `dark`, or `system`. In `system` the kanban canvas pulls from your VSCode editor background, so it always matches the rest of the workbench.
 
 ![Dark mode](./media/dark-mode.png)
-<!-- TODO: dark-mode.png — same board as the hero, but in dark theme. Shows the lime / blue / amber accents holding up on dark surfaces. -->
 
 ---
 
@@ -71,7 +69,10 @@ code --install-extension marcover9000.code-kanban
 
 ## Quick start
 
-1. Press `Ctrl+Alt+K` in any workspace. A dialog will offer to create `.todo.kanban` at the workspace root (with an option to add `*.kanban` to your `.gitignore`).
+1. Press `Ctrl+Alt+K` in any workspace. A dialog will offer to create `.todo.kanban` at the workspace root. By default it also appends `*.kanban` to your `.gitignore` so personal to-dos stay out of source control — flip `code-kanban.gitignore-todo` off if you'd rather track the board in git and share it with your team.
+
+   ![Quick start modal](./media/quick-start-modal.png)
+
 2. The board opens. Click `+ Add Card` in any list, type a title, press Enter.
 3. Drag cards between columns.
 4. Click a card to add labels, due date, description, tasks, or comments.
@@ -96,6 +97,7 @@ All settings live under `code-kanban.*` in VSCode settings.
 |---|---|---|
 | `code-kanban.default-lists` | `["Backlog", "To Do", "Doing", "Done"]` | Column titles used when creating a new board. |
 | `code-kanban.theme` | `system` | `light`, `dark`, or `system` (follow VSCode). |
+| `code-kanban.gitignore-todo` | `true` | Append `*.kanban` to `.gitignore` when auto-creating `.todo.kanban`. Set to `false` to share the board with your team via git. |
 
 ### Card density
 
