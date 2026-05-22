@@ -1,5 +1,11 @@
 # Code Kanban Boards
 
+[![VSCode Marketplace](https://img.shields.io/visual-studio-marketplace/v/marcover9000.code-kanban?label=VSCode%20Marketplace&color=007ACC)](https://marketplace.visualstudio.com/items?itemName=marcover9000.code-kanban)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/marcover9000.code-kanban?label=installs&color=007ACC)](https://marketplace.visualstudio.com/items?itemName=marcover9000.code-kanban)
+[![Open VSX](https://img.shields.io/open-vsx/v/marcover9000/code-kanban?label=Open%20VSX&color=A41E11)](https://open-vsx.org/extension/marcover9000/code-kanban)
+[![Open VSX Downloads](https://img.shields.io/open-vsx/dt/marcover9000/code-kanban?label=downloads&color=A41E11)](https://open-vsx.org/extension/marcover9000/code-kanban)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > Simple, hackable kanban for VSCode.
 
 Personal to-do boards that live alongside your code. Toggle them open with one keystroke, drag cards while you think, and keep everything in a `.kanban` JSON file that ships with your repo (or stays out of it).
@@ -55,7 +61,14 @@ Pick `light`, `dark`, or `system`. In `system` the kanban canvas pulls from your
 
 ## Install
 
-From VS Code:
+Code Kanban Boards is published to both extension galleries, so it works in VSCode, VSCodium, Code OSS, Cursor and any editor that pulls from Open VSX.
+
+| Editor | Gallery | Link |
+|---|---|---|
+| VSCode (official Microsoft build) | Visual Studio Marketplace | [marketplace.visualstudio.com](https://marketplace.visualstudio.com/items?itemName=marcover9000.code-kanban) |
+| VSCodium / Code OSS / Cursor / Theia / Gitpod | Open VSX | [open-vsx.org](https://open-vsx.org/extension/marcover9000/code-kanban) |
+
+From inside your editor:
 
 1. Open Extensions (`Ctrl+Shift+X`)
 2. Search for **Code Kanban Boards**
