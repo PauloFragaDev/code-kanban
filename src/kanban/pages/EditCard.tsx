@@ -473,9 +473,13 @@ const EditCard = () => {
               <TextBaseBold>Comments</TextBaseBold>
             </Head>
             <AddComment addText="Post" placeholder="Enter a comment" type="primary" onEnter={handleAddComment} />
-            {comments.map((c) => (
-              <Comment key={c.id} comment={c} onEnter={handleEditComment(c)} onDelete={handleDeleteComment} />
-            ))}
+            {comments.length > 0 && (
+              <div style={{display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '12px'}}>
+                {comments.map((c) => (
+                  <Comment key={c.id} comment={c} onEnter={handleEditComment(c)} onDelete={handleDeleteComment} />
+                ))}
+              </div>
+            )}
           </Line>
           <BUttons>
             <Button text="Duplicate" icon={<MdContentCopy />} disabled={false} onClick={handleCopyCard} />
