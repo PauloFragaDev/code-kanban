@@ -52,7 +52,7 @@ export const Description = ({description: defaultDescription, fontSize, onEnter}
         <TextareaAutosize
           autoFocus={isEdit}
           placeholder="Enter description"
-          minRows={3}
+          minRows={1}
           maxRows={20}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
             setDescription(e.target.value);
@@ -67,6 +67,7 @@ export const Description = ({description: defaultDescription, fontSize, onEnter}
           }}
           style={{
             width: '100%',
+            minHeight: '40px',
             fontFamily: 'var(--font-family)',
             backgroundColor: 'var(--card-background-color, var(--secondary-background-color))',
             color: 'var(--text-color)',
@@ -78,6 +79,7 @@ export const Description = ({description: defaultDescription, fontSize, onEnter}
             borderRadius: 'var(--border-radius)',
             outline: 'none',
             transition: 'border-color 120ms ease-in-out',
+            boxSizing: 'border-box',
           }}
           value={description}
         />
