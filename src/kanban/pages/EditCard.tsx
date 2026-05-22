@@ -131,6 +131,26 @@ const BUttons = styled.div`
   margin: 16px;
 `;
 
+const ArchivedBanner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+`;
+
+const ReadOnlyWrap = styled.div<{ $archived: boolean }>`
+  pointer-events: ${(p) => (p.$archived ? 'none' : 'auto')};
+  opacity: ${(p) => (p.$archived ? 0.7 : 1)};
+  transition: opacity 120ms ease-in-out;
+`;
+
 const EditCard = () => {
   const showModal = selectors.useShowModal();
   const archiveCards = selectors.useArchiveCards();
@@ -325,8 +345,8 @@ const EditCard = () => {
     }
 
     archiveCard(list, card);
-    navigate('/');
-  }, [list, card, navigate]);
+    setArchived(true);
+  }, [list, card]);
 
   const handleRestoreCard = React.useCallback(() => {
     if (!list || !archivedCard) {
@@ -388,15 +408,12 @@ const EditCard = () => {
             <MdClose />
           </CloseButton>
           {isArchived && (
-            <Line>
-              <Head>
-                <Icon>
-                  <MdOutlineArchive />
-                </Icon>
-                This card has been archived.
-              </Head>
-            </Line>
+            <ArchivedBanner>
+              <MdOutlineArchive />
+              <span>Archived — read only</span>
+            </ArchivedBanner>
           )}
+          <ReadOnlyWrap $archived={isArchived}>
           <Line>
             <CardTitleHead>
               <Icon>
@@ -525,6 +542,7 @@ const EditCard = () => {
               </div>
             )}
           </Line>
+          </ReadOnlyWrap>
           <BUttons>
             <Button text="Duplicate" icon={<MdContentCopy />} disabled={false} onClick={handleCopyCard} />
             {!isArchived && (
