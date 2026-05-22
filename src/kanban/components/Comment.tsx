@@ -6,12 +6,9 @@ import { styled } from 'styled-components';
 import { type Comment as CommentModel } from '../models/kanban';
 
 const Row = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 8px;
+  position: relative;
+  padding: 6px 40px 6px 8px;
   border-radius: var(--border-radius);
-  min-height: 32px;
   transition: background-color 120ms ease-in-out;
   &:hover {
     background-color: var(--hover-color);
@@ -19,8 +16,6 @@ const Row = styled.div`
 `;
 
 const Body = styled.div`
-  flex: 1;
-  min-width: 0;
   font-size: 0.875rem;
   line-height: 1.4rem;
   color: var(--text-color);
@@ -32,6 +27,10 @@ const Body = styled.div`
 `;
 
 const TrashButton = styled.button<{ $visible: boolean }>`
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
   width: 26px;
   height: 26px;
   display: flex;
@@ -42,7 +41,6 @@ const TrashButton = styled.button<{ $visible: boolean }>`
   border-radius: var(--border-radius);
   color: var(--secondary-text-color);
   cursor: pointer;
-  flex-shrink: 0;
   opacity: ${(p) => (p.$visible ? 1 : 0)};
   pointer-events: ${(p) => (p.$visible ? 'auto' : 'none')};
   transition:
