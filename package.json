@@ -88,6 +88,11 @@
       {
         "command": "code-kanban.toggle",
         "title": "Code Kanban: Toggle todo board"
+      },
+      {
+        "command": "code-kanban.sync-now",
+        "title": "Code Kanban: Sync with trackActivity",
+        "icon": "$(sync)"
       }
     ],
     "keybindings": [
@@ -145,12 +150,32 @@
             "type": "string"
           },
           "default": [
+            "Blocked",
             "Backlog",
             "To Do",
             "Doing",
+            "Stand By",
             "Done"
           ],
-          "description": "List/column titles used when creating a new kanban file."
+          "description": "List/column titles used when creating a new kanban file. The default set matches trackActivity's fixed 6 columns so the same workspace can sync both ways."
+        },
+        "code-kanban.sync.trackactivity-url": {
+          "title": "trackActivity Base URL",
+          "type": "string",
+          "default": "",
+          "description": "Base URL of your trackActivity dashboard (e.g. http://127.0.0.1:8000). Leave empty to disable sync."
+        },
+        "code-kanban.sync.token": {
+          "title": "trackActivity API Token",
+          "type": "string",
+          "default": "",
+          "description": "Bearer token configured in trackActivity's .env (API_TOKEN). Stored in your VS Code user settings."
+        },
+        "code-kanban.sync.auto-on-save": {
+          "title": "Auto-sync on save",
+          "type": "boolean",
+          "default": false,
+          "description": "When enabled, every save of a .kanban file pushes the current state to trackActivity and applies the server's resolved state back."
         },
         "code-kanban.gitignore-todo": {
           "title": "Add .todo.kanban to .gitignore on creation",

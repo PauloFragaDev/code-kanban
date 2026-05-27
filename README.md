@@ -167,6 +167,35 @@ npm run package     # builds the .vsix
 npm test            # xo + vitest
 ```
 
+## Optional sync with trackActivity (fork addition)
+
+> **This is an addition in the [PauloFragaDev/code-kanban](https://github.com/PauloFragaDev/code-kanban) fork**, not present in upstream. Disabled by default — leave the URL blank and the extension behaves exactly like upstream.
+
+[trackActivity](https://github.com/PauloFragaDev/trackActivity) is a self-hosted personal dashboard that aggregates tasks across all your repos in a single Kanban. The fork can push the current `.kanban` to trackActivity and apply the server's resolved state back, so a board edited in VS Code stays in sync with the global view (and vice versa).
+
+The default `default-lists` also changes to match trackActivity's fixed 6 columns so the two sides speak the same vocabulary:
+
+> **Blocked · Backlog · To Do · Doing · Stand By · Done**
+
+### Setup
+
+1. Generate an API token in trackActivity (`API_TOKEN` in its `.env`).
+2. In VS Code settings:
+   - `code-kanban.sync.trackactivity-url`: e.g. `http://127.0.0.1:8000`.
+   - `code-kanban.sync.token`: the token from step 1.
+   - `code-kanban.sync.auto-on-save`: `true` if you want every save to push.
+
+### How it works
+
+- **Manual**: command palette → `Code Kanban: Sync with trackActivity`.
+- **Auto** (if `auto-on-save` is on): every save of a `.kanban` file triggers a sync.
+- The extension `POST`s the current kanban to `/api/sync/kanban`. The server identifies the project from your workspace path (via `ProjectMapping` of trackActivity), merges by timestamp last-writer-wins, and returns the resolved state. The extension rewrites the file with the response.
+- Cards removed locally are **archived** on the server (not hard-deleted). Restore them from `/tasks/archived` if needed.
+
+### When to use it
+
+You probably **don't** want this if you use code-kanban as a personal tool with no global aggregator. The sync is opt-in — leave the URL empty and nothing changes from upstream behaviour.
+
 ## Contributing
 
 Issues and PRs welcome at [marcover9000/code-kanban](https://github.com/marcover9000/code-kanban/issues).
