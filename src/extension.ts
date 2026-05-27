@@ -6,11 +6,14 @@ import { toggleKanban } from './toggleKanban';
 import { PanelBoardViewProvider } from './panelBoardView';
 import { ShortcutBounceViewProvider } from './shortcutBounceView';
 import {
+  getSyncCredentials,
   isAutoOnSaveEnabled,
+  isLivePullEnabled,
   reportOutcome,
   syncKanban,
   writeKanbanToDocument,
 } from './sync/trackActivitySync';
+import { openKanbanStream, type StreamCloser } from './sync/streamSync';
 
 export function activate(context: vscode.ExtensionContext) {
   const kanbanWatcher = vscode.workspace.createFileSystemWatcher('**/*.kanban');
@@ -131,5 +134,86 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     kanbanWatcher,
     vscode.window.registerWebviewViewProvider('code-kanban.panel-view', panelBoardProvider)
+  );
+
+  // ─── Live pull (SSE) ──────────────────────────────────────────────
+  //
+  // Por cada documento `.kanban` abierto, mantenemos un stream al server.
+  // Cuando el server emite `change`, lanzamos una sync para que el cliente
+  // tire del estado nuevo. Cierre limpio al cerrar el documento.
+  //
+  // Reactivo a cambios de configuración: si activas/desactivas la opción
+  // o tocas URL/token, los streams se reinician.
+  const streams = new Map<string, StreamCloser>();
+
+  const openStreamFor = (doc: vscode.TextDocument): void => {
+    if (!doc.fileName.endsWith('.kanban')) return;
+    if (!isLivePullEnabled()) return;
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(doc.uri);
+    if (!workspaceFolder) return;
+    const key = doc.uri.toString();
+    if (streams.has(key)) return;
+
+    const { url, token } = getSyncCredentials();
+    const close = openKanbanStream(
+      { url, token, workspacePath: workspaceFolder.uri.fsPath },
+      {
+        onChange: async () => {
+          // El server vio updated_at más nuevo: tiramos del estado.
+          const outcome = await syncKanban(doc);
+          if (outcome.kind === 'ok') {
+            await writeKanbanToDocument(doc, outcome.kanban);
+          } else if (outcome.kind !== 'disabled') {
+            reportOutcome(outcome);
+          }
+        },
+        onError: (message) => {
+          // Si el stream falla por un error duro (401/422), aviso una vez.
+          vscode.window.showWarningMessage(message);
+          const closer = streams.get(key);
+          closer?.();
+          streams.delete(key);
+        },
+      },
+    );
+    streams.set(key, close);
+  };
+
+  const closeStreamFor = (doc: vscode.TextDocument): void => {
+    const key = doc.uri.toString();
+    const closer = streams.get(key);
+    if (closer) {
+      closer();
+      streams.delete(key);
+    }
+  };
+
+  const closeAllStreams = (): void => {
+    for (const closer of streams.values()) closer();
+    streams.clear();
+  };
+
+  // Engancha los .kanban ya abiertos al activarse la extensión.
+  for (const doc of vscode.workspace.textDocuments) {
+    openStreamFor(doc);
+  }
+
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenTextDocument((doc) => openStreamFor(doc)),
+    vscode.workspace.onDidCloseTextDocument((doc) => closeStreamFor(doc)),
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      // Cualquier cambio en URL/token/live-pull reinicia los streams.
+      const touched =
+        e.affectsConfiguration('code-kanban.sync.trackactivity-url') ||
+        e.affectsConfiguration('code-kanban.sync.token') ||
+        e.affectsConfiguration('code-kanban.sync.live-pull');
+      if (!touched) return;
+      closeAllStreams();
+      if (isLivePullEnabled()) {
+        for (const doc of vscode.workspace.textDocuments) openStreamFor(doc);
+      }
+    }),
+    // Cleanup al desactivar la extensión.
+    { dispose: closeAllStreams } as vscode.Disposable,
   );
 }

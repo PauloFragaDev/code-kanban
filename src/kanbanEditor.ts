@@ -26,11 +26,19 @@ export class KanbanEditorProvider implements vscode.CustomTextEditorProvider {
     };
     webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
 
+    // El último contenido que enviamos al webview. Sirve para distinguir
+    // entre cambios originados aquí (el propio webview editó vía applyEdit
+    // y este texto coincide con `lastSyncedText`) y cambios externos
+    // (otra fuente —p.ej. la sync con trackActivity— reescribió el archivo,
+    // y `lastSyncedText` está atrasado). En el segundo caso, repintamos.
+    let lastSyncedText = document.getText();
+
     const updateWebview = async () => {
+      lastSyncedText = document.getText();
       await webviewPanel.webview.postMessage({
         type: 'update',
         title: document.uri.path.split('/')?.slice(-1)[0]?.replace('.kanban', ''),
-        text: document.getText(),
+        text: lastSyncedText,
       });
     };
 
@@ -48,6 +56,11 @@ export class KanbanEditorProvider implements vscode.CustomTextEditorProvider {
           }
 
           case 'edit': {
+            // Antes de aplicar, registramos qué texto se va a escribir: el
+            // listener de cambios externos lo comparará con `getText()`
+            // post-edit y, al coincidir, no refrescará el webview.
+            const text = toJson(e.kanban!);
+            lastSyncedText = text;
             // updateTextDocument logs internally on failure. The webview will
             // resend the full state on the next interaction, so a transient
             // false here doesn't lose data and shouldn't toast the user.
@@ -74,6 +87,19 @@ export class KanbanEditorProvider implements vscode.CustomTextEditorProvider {
         }
       }
     );
+
+    // Cambios externos al documento (p.ej. la sync con trackActivity
+    // reescribiendo el .kanban) deben repintarse en el webview. Sin
+    // este listener el archivo cambia en disco pero el board sigue
+    // mostrando el contenido anterior — el bug que motivó este fix.
+    const changeSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
+      if (e.document.uri.toString() !== document.uri.toString()) return;
+      const current = e.document.getText();
+      // Ignora ecos del propio webview: ya hicimos postMessage con este texto.
+      if (current === lastSyncedText) return;
+      void updateWebview();
+    });
+    webviewPanel.onDidDispose(() => changeSubscription.dispose());
   }
 
   private getHtmlForWebview(webview: vscode.Webview): string {
