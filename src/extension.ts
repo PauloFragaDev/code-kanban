@@ -5,10 +5,33 @@ import { buildInitialKanban } from './buildInitialKanban';
 import { toggleKanban } from './toggleKanban';
 import { PanelBoardViewProvider } from './panelBoardView';
 import { ShortcutBounceViewProvider } from './shortcutBounceView';
+import {
+  isAutoOnSaveEnabled,
+  reportOutcome,
+  syncKanban,
+  writeKanbanToDocument,
+} from './sync/trackActivitySync';
 
 export function activate(context: vscode.ExtensionContext) {
   const kanbanWatcher = vscode.workspace.createFileSystemWatcher('**/*.kanban');
   const panelBoardProvider = new PanelBoardViewProvider(context, kanbanWatcher);
+
+  // Marca URIs cuya escritura nace de la propia sync, para que el hook
+  // `onDidSaveTextDocument` no entre en bucle.
+  const syncing = new Set<string>();
+
+  const runSyncOn = async (doc: vscode.TextDocument): Promise<void> => {
+    const outcome = await syncKanban(doc);
+    if (outcome.kind === 'ok') {
+      syncing.add(doc.uri.toString());
+      try {
+        await writeKanbanToDocument(doc, outcome.kanban);
+      } finally {
+        syncing.delete(doc.uri.toString());
+      }
+    }
+    reportOutcome(outcome);
+  };
 
   context.subscriptions.push(
     KanbanEditorProvider.register(context),
@@ -34,7 +57,38 @@ export function activate(context: vscode.ExtensionContext) {
         console.error('Cannot create file', error);
       }
     }),
-    vscode.commands.registerCommand('code-kanban.toggle', () => toggleKanban(panelBoardProvider))
+    vscode.commands.registerCommand('code-kanban.toggle', () => toggleKanban(panelBoardProvider)),
+    vscode.commands.registerCommand('code-kanban.sync-now', async () => {
+      const editor = vscode.window.activeTextEditor;
+      const doc =
+        editor?.document.fileName.endsWith('.kanban')
+          ? editor.document
+          : vscode.workspace.textDocuments.find((d) => d.fileName.endsWith('.kanban'));
+      if (!doc) {
+        await vscode.window.showWarningMessage('Open a .kanban file to sync it with trackActivity.');
+        return;
+      }
+      await runSyncOn(doc);
+    }),
+    // Auto-sync al guardar (opcional según setting).
+    vscode.workspace.onDidSaveTextDocument(async (doc) => {
+      if (!doc.fileName.endsWith('.kanban')) return;
+      if (!isAutoOnSaveEnabled()) return;
+      if (syncing.has(doc.uri.toString())) return;
+
+      const outcome = await syncKanban(doc);
+      if (outcome.kind === 'ok') {
+        syncing.add(doc.uri.toString());
+        try {
+          await writeKanbanToDocument(doc, outcome.kanban);
+        } finally {
+          syncing.delete(doc.uri.toString());
+        }
+      } else if (outcome.kind !== 'disabled') {
+        // Sin configurar no espameamos el toast en cada save.
+        reportOutcome(outcome);
+      }
+    })
   );
 
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
