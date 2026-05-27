@@ -15,6 +15,14 @@ import {
 } from './sync/trackActivitySync';
 import { openKanbanStream, type StreamCloser } from './sync/streamSync';
 
+// Output channel para diagnóstico del live-pull. Accesible en VS Code via
+// View → Output → "Code Kanban Sync".
+const syncOutput = vscode.window.createOutputChannel('Code Kanban Sync');
+// Expuesto globalmente para que streamSync.ts pueda escribir sin tener que
+// pasarse el canal como dependencia explícita por cada llamada.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).__codeKanbanLog__ = syncOutput;
+
 export function activate(context: vscode.ExtensionContext) {
   const kanbanWatcher = vscode.workspace.createFileSystemWatcher('**/*.kanban');
   const panelBoardProvider = new PanelBoardViewProvider(context, kanbanWatcher);
@@ -147,12 +155,24 @@ export function activate(context: vscode.ExtensionContext) {
   const streams = new Map<string, StreamCloser>();
 
   const openStreamFor = (doc: vscode.TextDocument): void => {
-    if (!doc.fileName.endsWith('.kanban')) return;
-    if (!isLivePullEnabled()) return;
+    if (!doc.fileName.endsWith('.kanban')) {
+      return;
+    }
+    if (!isLivePullEnabled()) {
+      syncOutput.appendLine(`[live-pull] skipped (disabled or not configured): ${doc.fileName}`);
+      return;
+    }
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(doc.uri);
-    if (!workspaceFolder) return;
+    if (!workspaceFolder) {
+      syncOutput.appendLine(`[live-pull] skipped (no workspace folder): ${doc.fileName}`);
+      return;
+    }
     const key = doc.uri.toString();
-    if (streams.has(key)) return;
+    if (streams.has(key)) {
+      syncOutput.appendLine(`[live-pull] already streaming ${key}`);
+      return;
+    }
+    syncOutput.appendLine(`[live-pull] starting stream for workspace ${workspaceFolder.uri.fsPath}`);
 
     const { url, token } = getSyncCredentials();
     const close = openKanbanStream(

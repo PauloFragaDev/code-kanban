@@ -39,7 +39,22 @@ export function openKanbanStream(config: StreamConfig, handlers: StreamHandlers)
   const url = new URL(`${config.url.replace(/\/+$/, '')}/api/sync/kanban/stream`);
   url.searchParams.set('workspace_path', config.workspacePath);
 
+  // Logging diagnóstico al output channel propio para que el usuario
+  // pueda inspeccionar el estado del live-pull. Accesible en VS Code via
+  // View → Output → "Code Kanban Sync".
+  const log = (msg: string): void => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ch = (globalThis as any).__codeKanbanLog__;
+      if (ch && typeof ch.appendLine === 'function') {
+        ch.appendLine(`[stream ${config.workspacePath}] ${msg}`);
+      }
+    } catch { /* ignore */ }
+    console.log(`[code-kanban stream] ${msg}`);
+  };
+
   const loop = async (): Promise<void> => {
+    log(`opening ${url.toString()}`);
     while (!stopped) {
       controller = new AbortController();
       try {
@@ -51,50 +66,49 @@ export function openKanbanStream(config: StreamConfig, handlers: StreamHandlers)
           },
           signal: controller.signal,
         });
+        log(`HTTP ${res.status}`);
 
         if (res.status === 422) {
-          // No project mapping — error duro, no tiene sentido reintentar
-          // hasta que el usuario configure el mapping. Salimos del loop.
           const body = await res.text().catch(() => '');
           handlers.onError?.(`Sync stream: ${body}`);
           return;
         }
-
         if (res.status === 401) {
           handlers.onError?.('Sync stream: 401 Unauthorized — check code-kanban.sync.token.');
           return;
         }
-
         if (!res.ok || !res.body) {
           throw new Error(`HTTP ${res.status}`);
         }
 
-        // Conexión OK → resetear backoff.
         backoff = INITIAL_BACKOFF_MS;
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        log('reader ready, awaiting chunks…');
 
         while (!stopped) {
           const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
+          if (done) { log('stream closed by server (done=true)'); break; }
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          log(`chunk (${value?.length ?? 0} bytes): ${chunk.replace(/\n/g, '\\n').slice(0, 120)}`);
 
-          // SSE: los eventos están separados por una línea en blanco.
           let sepIdx: number;
           while ((sepIdx = buffer.indexOf('\n\n')) >= 0) {
             const block = buffer.slice(0, sepIdx);
             buffer = buffer.slice(sepIdx + 2);
-            parseAndDispatch(block, handlers);
+            parseAndDispatch(block, handlers, log);
           }
         }
       } catch (err) {
         if (stopped) return;
-        // Conexión caída — reconectamos con backoff.
+        log(`fetch threw: ${String(err)}`);
       }
 
       if (stopped) return;
+      log(`reconnect in ${backoff}ms`);
       await sleep(backoff);
       backoff = Math.min(MAX_BACKOFF_MS, Math.round(backoff * 1.6));
     }
@@ -108,7 +122,7 @@ export function openKanbanStream(config: StreamConfig, handlers: StreamHandlers)
   };
 }
 
-function parseAndDispatch(block: string, handlers: StreamHandlers): void {
+function parseAndDispatch(block: string, handlers: StreamHandlers, log?: (msg: string) => void): void {
   // Cada bloque es un conjunto de líneas tipo "event: name" / "data: json"
   // / ": comentario". Ignoramos comentarios (heartbeats).
   const lines = block.split('\n');
@@ -128,6 +142,7 @@ function parseAndDispatch(block: string, handlers: StreamHandlers): void {
   let data: unknown;
   try { data = JSON.parse(raw); } catch { return; }
 
+  log?.(`event=${event} data=${raw.slice(0, 100)}`);
   if (event === 'change' && typeof data === 'object' && data && 'latest' in data) {
     const latest = (data as { latest: string }).latest;
     handlers.onChange(latest);
