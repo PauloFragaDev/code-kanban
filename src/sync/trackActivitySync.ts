@@ -65,6 +65,18 @@ export function isAutoOnSaveEnabled(): boolean {
   return isSyncConfigured() && readConfig().autoOnSave;
 }
 
+/** Live-pull (SSE) activado por config y con sync configurada. */
+export function isLivePullEnabled(): boolean {
+  if (!isSyncConfigured()) return false;
+  return vscode.workspace.getConfiguration().get<boolean>('code-kanban.sync.live-pull') ?? false;
+}
+
+/** Devuelve url + token para abrir el stream sin volver a parsear settings. */
+export function getSyncCredentials(): { url: string; token: string } {
+  const { url, token } = readConfig();
+  return { url, token };
+}
+
 /**
  * Convierte el modelo local de la extensión al payload que espera
  * `POST /api/sync/kanban` en trackActivity.
@@ -185,7 +197,21 @@ export async function syncKanban(document: vscode.TextDocument): Promise<SyncOut
     return { kind: 'transport-error', message: `Local kanban is not valid JSON: ${String(err)}` };
   }
 
-  const payload = kanbanToPayload(workspaceFolder.uri.fsPath, new Date(), kanban);
+  // `client_updated_at` debe reflejar cuándo se editó realmente el archivo
+  // en disco — no `new Date()` (que sería "ahora" y haría que el cliente
+  // gane siempre el conflicto, sobreescribiendo cambios hechos en el server
+  // entre syncs). Usamos el mtime del filesystem. Si VS Code tiene el
+  // documento "dirty" sin guardar, igualmente el mtime del disco es la
+  // verdad — ese cambio se llevará tras el siguiente save.
+  let clientUpdatedAt: Date;
+  try {
+    const stat = await vscode.workspace.fs.stat(document.uri);
+    clientUpdatedAt = new Date(stat.mtime);
+  } catch {
+    // Fallback prudente: si no podemos leer el mtime, asumimos "ahora".
+    clientUpdatedAt = new Date();
+  }
+  const payload = kanbanToPayload(workspaceFolder.uri.fsPath, clientUpdatedAt, kanban);
 
   let res: Response;
   try {

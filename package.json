@@ -2,7 +2,7 @@
   "name": "code-kanban",
   "displayName": "Code Kanban Boards",
   "description": "Lightweight kanban boards for your projects, embedded in VSCode.",
-  "version": "0.2.3",
+  "version": "0.2.7",
   "author": "Marc Sanahuja",
   "license": "MIT",
   "publisher": "marcover9000",
@@ -176,6 +176,12 @@
           "type": "boolean",
           "default": false,
           "description": "When enabled, every save of a .kanban file pushes the current state to trackActivity and applies the server's resolved state back."
+        },
+        "code-kanban.sync.live-pull": {
+          "title": "Live pull (SSE)",
+          "type": "boolean",
+          "default": false,
+          "description": "When enabled, the extension keeps an SSE connection to trackActivity and pulls the resolved state automatically whenever the server detects a change on the linked project. Requires the sync URL and token to be set."
         },
         "code-kanban.gitignore-todo": {
           "title": "Add .todo.kanban to .gitignore on creation",
