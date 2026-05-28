@@ -12,6 +12,7 @@ import {
   reportOutcome,
   syncKanban,
   writeKanbanToDocument,
+  type SyncOutcome,
 } from './sync/trackActivitySync';
 import { openKanbanStream, type StreamCloser } from './sync/streamSync';
 
@@ -31,7 +32,14 @@ export function activate(context: vscode.ExtensionContext) {
   // `onDidSaveTextDocument` no entre en bucle.
   const syncing = new Set<string>();
 
-  const runSyncOn = async (doc: vscode.TextDocument): Promise<void> => {
+  /**
+   * Ejecuta una sync sobre el documento. Mantiene el set `syncing` para
+   * impedir que el save resultante reentre por onDidSaveTextDocument (y
+   * por el `onDidChangeTextDocument` del editor). Devuelve el outcome
+   * para que cada caller decida cómo reportar (algunos quieren callado
+   * el caso 'disabled', otros no).
+   */
+  const runSyncOn = async (doc: vscode.TextDocument): Promise<SyncOutcome> => {
     const outcome = await syncKanban(doc);
     if (outcome.kind === 'ok') {
       syncing.add(doc.uri.toString());
@@ -41,7 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
         syncing.delete(doc.uri.toString());
       }
     }
-    reportOutcome(outcome);
+    return outcome;
   };
 
   context.subscriptions.push(
@@ -79,7 +87,9 @@ export function activate(context: vscode.ExtensionContext) {
         await vscode.window.showWarningMessage('Open a .kanban file to sync it with trackActivity.');
         return;
       }
-      await runSyncOn(doc);
+      // Sync-now siempre reporta — el usuario lo invocó manualmente.
+      const outcome = await runSyncOn(doc);
+      reportOutcome(outcome);
     }),
     // Auto-sync al guardar (opcional según setting).
     vscode.workspace.onDidSaveTextDocument(async (doc) => {
@@ -87,16 +97,9 @@ export function activate(context: vscode.ExtensionContext) {
       if (!isAutoOnSaveEnabled()) return;
       if (syncing.has(doc.uri.toString())) return;
 
-      const outcome = await syncKanban(doc);
-      if (outcome.kind === 'ok') {
-        syncing.add(doc.uri.toString());
-        try {
-          await writeKanbanToDocument(doc, outcome.kanban);
-        } finally {
-          syncing.delete(doc.uri.toString());
-        }
-      } else if (outcome.kind !== 'disabled') {
-        // Sin configurar no espameamos el toast en cada save.
+      const outcome = await runSyncOn(doc);
+      // Sin configurar no espameamos el toast en cada save.
+      if (outcome.kind !== 'disabled' && outcome.kind !== 'ok') {
         reportOutcome(outcome);
       }
     })
@@ -180,10 +183,11 @@ export function activate(context: vscode.ExtensionContext) {
       {
         onChange: async () => {
           // El server vio updated_at más nuevo: tiramos del estado.
-          const outcome = await syncKanban(doc);
-          if (outcome.kind === 'ok') {
-            await writeKanbanToDocument(doc, outcome.kanban);
-          } else if (outcome.kind !== 'disabled') {
+          // Reusamos `runSyncOn` para que `syncing` bloquee el rebote
+          // del save por `onDidSaveTextDocument` (auto-on-save).
+          if (syncing.has(doc.uri.toString())) return;
+          const outcome = await runSyncOn(doc);
+          if (outcome.kind !== 'disabled' && outcome.kind !== 'ok') {
             reportOutcome(outcome);
           }
         },

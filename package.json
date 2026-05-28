@@ -2,7 +2,7 @@
   "name": "code-kanban",
   "displayName": "Code Kanban Boards",
   "description": "Lightweight kanban boards for your projects, embedded in VSCode.",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "author": "Marc Sanahuja",
   "license": "MIT",
   "publisher": "marcover9000",

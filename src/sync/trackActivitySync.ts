@@ -245,14 +245,22 @@ export async function syncKanban(document: vscode.TextDocument): Promise<SyncOut
 /**
  * Escribe el Kanban resuelto al documento. Hace edit + save explícitos
  * para que el cambio entre por el flujo normal del editor.
+ *
+ * Idempotente: si el contenido nuevo es idéntico al actual, no hace
+ * nada (evita un save innecesario que dispararía `onDidSaveTextDocument`
+ * y, con auto-on-save activo, una nueva sync en bucle).
  */
 export async function writeKanbanToDocument(document: vscode.TextDocument, kanban: Kanban): Promise<boolean> {
+  const next = toJson(kanban);
+  if (document.getText() === next) {
+    return true;
+  }
   const edit = new vscode.WorkspaceEdit();
   const range = new vscode.Range(
     document.positionAt(0),
     document.positionAt(document.getText().length),
   );
-  edit.replace(document.uri, range, toJson(kanban));
+  edit.replace(document.uri, range, next);
   const applied = await vscode.workspace.applyEdit(edit);
   if (applied) {
     await document.save();
